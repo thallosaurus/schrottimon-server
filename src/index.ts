@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import express from 'express';
 import http from 'http';
 import { RoomManager } from './RoomManager';
+import { Direction } from './Player';
 
 export interface ServerToClientEvents {
     joinroom: (rooms: Array<string>) => void;
@@ -10,7 +11,7 @@ export interface ServerToClientEvents {
 
     loadlevel: (levelId: string) => void;
     playerjoin: (socketid: string, x: number, y: number) => void;
-    playermove: (socketid: string, x: number, y: number) => void;
+    playermove: (socketid: string, x: number, y: number, direction: Direction) => void;
 }
 
 export interface ClientToServerEvents {

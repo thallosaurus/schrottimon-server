@@ -13,6 +13,7 @@ export class Player {
 
     public y: number = 0;
     public x: number = 0;
+    public dir: Direction = Direction.DOWN;
 
     private moveCooldown: NodeJS.Timeout|null = null;
 
@@ -33,9 +34,16 @@ export class Player {
                 }, 250);
                 //socket.send(socketId, x, y);
                 this.socket.rooms.forEach(e => {
-                    this.server.to(e).emit("playermove", socketId, this.x, this.y);
+                    this.server.to(e).emit("playermove", socketId, this.x, this.y, this.dir);
                 });
             }
         });
     }
+}
+
+export enum Direction {
+    DOWN,
+    UP,
+    RIGHT,
+    LEFT
 }
