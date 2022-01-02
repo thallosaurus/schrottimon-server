@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import { getSystemErrorMap } from "util";
 import { ClientToServerEvents, ServerToClientEvents, InterServerEvents } from ".";
 import { RoomManager, RoomStructure } from "./RoomManager";
 
