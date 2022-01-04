@@ -11,7 +11,7 @@ export interface ServerToClientEvents {
 
     loadlevel: (levelId: string) => void;
     playerjoin: (socketid: string, x: number, y: number) => void;
-    playermove: (socketid: string, x: number, y: number, direction: Direction) => void;
+    playermove: (socketid: string, x: number, y: number, direction: Direction, running: boolean) => void;
 }
 
 export interface ClientToServerEvents {
@@ -25,23 +25,23 @@ export interface InterServerEvents {
 
 }
 
-const rooms = [];
-
 const app = express();
 app.use(express.static("static"));
 const httpServer = http.createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents>(httpServer);
 
-const rm: RoomManager = new RoomManager(io);
+const rm: RoomManager = new RoomManager(io, app);
 
 io.on("connect", (socket) => {
     //socket.emit("joinroom", "hello world");
     console.log("A new connection from id " + socket.id);
+    rm.addNewConnection(socket);
 
-    socket.on("room", (room: string) => {
-        console.log("room event");
-        rm.addUserToRoom(room, socket);
-    });
+    // socket.on("room", (room: string) => {
+        // console.log("room event");
+
+        
+    // });
 
     socket.on("message", message => {
         console.log("Message from " + socket.id + ": " + message);

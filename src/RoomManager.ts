@@ -1,93 +1,100 @@
-import { BroadcastOperator, Server, Socket,  } from "socket.io";
+import { BroadcastOperator, Server, Socket, } from "socket.io";
 import { isThisTypeNode } from "typescript";
 import { threadId } from "worker_threads";
 import { ClientToServerEvents, ServerToClientEvents, InterServerEvents } from ".";
 import { Player } from "./Player";
+import { Room } from "./Room";
+import express, { Router, Application } from 'express';
+import path from "path";
+
+const DEFAULT_MAP = "real_map2_20x20.tmx";
 
 export interface RoomStructure {
     users: Array<string>;
     players: Array<Player>;
-/*     addUserToArray: (id: string) => void;
-    removeUserFromArray: (id: string) => void;
-    isUserInRoom: (id: string) => boolean; */
+    name: string;
+    /*     addUserToArray: (id: string) => void;
+        removeUserFromArray: (id: string) => void;
+        isUserInRoom: (id: string) => boolean; */
 }
 
 interface ObjectStruct1 {
-    [key: string]: RoomStructure;
+    [key: string]: Room;
 }
 
 export class RoomManager {
     private readonly rooms: ObjectStruct1;
-    private readonly server: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, any>;
+    static server: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, any>;
 
-    constructor(server: Server) {
+    constructor(server: Server, expressApp: Application) {
         this.rooms = {};
-        this.server = server;
-
-        //this.addRoom("level-1");
+        RoomManager.server = server;
+        this.setupHttpRoute(expressApp);
     }
 
-    static createEmptyRoom(): RoomStructure {
-        let room: RoomStructure = {
-            users: [],
-            players: []
-        }
-
-        return room;
+    private setupHttpRoute(app: Router) {
+        const staticPath = path.resolve(__dirname + "/../static/levels/");
+        app.use("/data/levels", express.static(staticPath));
     }
 
-    getUserInRoomAsPlayer(room: string, id: string) {
-
+    static createEmptyRoom(name: string): Room {
+        return new Room(name, this.server);
     }
 
     userLeaveRooms(user: Socket) {
         let room = (<any>user).lastroom;
-        if (this.rooms[room]) {
-            this.rooms[room].players = this.rooms[room].players.filter(e => {
+        if (this.roomExists(room)) {
+            this.rooms[room].players = this.getRoom(room).players.filter(e => {
                 console.log(e.id, user.id);
+                if (e.id === user.id) {
+                    e.unload();
+
+                }
                 return e.id !== user.id
             });
         }
         console.log(user.id + " leaving");
-        this.server.to(room).emit("playerleave", user.id);
+        RoomManager.server.to(room).emit("playerleave", user.id);
         user.leave(room);
         console.log(user.rooms);
     }
 
-    addUserToRoom(room: string, socket: Socket) {
+    addSocketToRoom(room: string, socket: Socket) {
         this.userLeaveRooms(socket);
-        console.log("joining room", room);
-        socket.join(room);
-        socket.emit("loadlevel", room);
-        console.log(socket.rooms);
-        (<any>socket).lastroom = room;
-        if (!this.rooms[room]) {
-            this.rooms[room] = RoomManager.createEmptyRoom();
+        if (!this.roomExists(room)) {
+            this.addRoom(room);
         }
-
-        for (let players of this.rooms[room].players) {
-            this.letEntitiesSpawn(socket, players.id, players.x, players.y);
-        }
-
-        // this.rooms[room].users.push(socket.id);
-        this.rooms[room].players.push(new Player(socket.id, socket, this.server, room, this));
-        this.server.to(room).emit("playerjoin", socket.id, 0, 0);
+        this.rooms[room].addUser(socket);
+        RoomManager.server.to(room).emit("playerjoin", socket.id, 0, 0);
     }
 
-    private letEntitiesSpawn(destSocket: Socket, socketId: string, x: number, y: number) {
-        destSocket.emit("playerjoin", socketId, x , y);
+    /**
+     * Call this only once for each session as it also sets up the room switch handler
+     * @param socket 
+     */
+    addNewConnection(socket: Socket) {
+        socket.on("room", (room: string) => {
+            console.log("room event");
+            this.addSocketToRoom(room, socket);
+        });
+
+        this.addSocketToRoom(DEFAULT_MAP, socket);
     }
 
     addRoom(name: string) {
-        this.addRoomStruct(name, RoomManager.createEmptyRoom());
+        this.addRoomStruct(name, RoomManager.createEmptyRoom(name));
     }
 
-    broadcastToRoom(room: string): BroadcastOperator<ServerToClientEvents> {
-        return this.server.to(room);
-    }
-    
-    private addRoomStruct(name: string, room: RoomStructure) {
+    /*     broadcastToRoom(room: string): BroadcastOperator<ServerToClientEvents> {
+            return RoomManager.server.to(room);
+        } */
+
+    private addRoomStruct(name: string, room: Room) {
         this.rooms[name] = room;
+    }
+
+    getRoom(room: string) {
+        return this.rooms[room];
     }
 
     getRoomNames(): Array<string> {
