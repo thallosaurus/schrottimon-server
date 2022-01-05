@@ -4,6 +4,7 @@ import { Player } from "./Player";
 
 import tmx = require("tmx-parser");
 import path = require("path");
+import process = require("process");
 
 export class Room {
     players: Array<Player> = [];
@@ -19,6 +20,13 @@ export class Room {
 
         const staticPath = path.resolve(__dirname + "/../static/levels/" + n);
         const tilesetPath = path.resolve(__dirname + "/../static/tilesets");
+
+        /*process.once("SIGUSR2", () => {
+            console.log("Goodbye");
+            this.players.forEach(e => {
+                this.server.to(this.name).emit("playerleave", e.id);
+            });
+        });*/
 
         tmx.parseFile(staticPath, (err: any, map: any) => {
             if (err) throw err;
@@ -50,9 +58,30 @@ export class Room {
         destSocket.emit("playerjoin", socketId, x, y);
     }
 
+    private getRootMap(): any {
+        let hit = null;
+
+        // let f = this.map.layers.filter((e: any) => {
+        for (let i = 0; i < this.map.layers.length; i++) {
+            if (this.map.layers[i].name === "root" && this.map.layers[i].type === "tile") {                
+                hit = this.map.layers[i];
+            }
+            if (hit !== null) break;
+        }
+
+        return hit;
+    }
+
     //checks if the tile at room layer is null, if it is you cannot move on the requested tile
-    private canMoveOnMap(x: number, y: number) {
-        return this.map.layers[0].tileAt(x, y) !== undefined;
+    private canMoveOnMap(x: number, y: number): boolean {
+        let rm = this.getRootMap();
+        if (rm !== null) {
+            let tile = rm.tileAt(x, y);
+            // console.log(tile);
+            return tile !== undefined;
+        } else {  
+            return true;
+        }
     }
 
     canMoveThere(x: number, y: number) {
@@ -60,9 +89,12 @@ export class Room {
         let hit = false;
         for (let e of this.players) {
             hit = e.x === x && e.y === y;
-            if (hit) break;
+            if (hit) 
+            {
+                break;
+            }
         }
-        //console.log(hit);
+
         return this.canMoveOnMap(x, y) && !hit;
     }
 

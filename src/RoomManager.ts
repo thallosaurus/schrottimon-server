@@ -48,7 +48,7 @@ export class RoomManager {
                 console.log(e.id, user.id);
                 if (e.id === user.id) {
                     e.unload();
-
+                    // user.emit("playerleave", user.id);
                 }
                 return e.id !== user.id
             });
