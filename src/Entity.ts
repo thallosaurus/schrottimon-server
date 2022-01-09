@@ -1,17 +1,37 @@
+import { Server } from "socket.io";
+import { ClientToServerEvents, ServerToClientEvents, InterServerEvents } from ".";
+import { Direction } from "./Player";
+import { Room } from "./Room";
+
+export class Entity {
+    public readonly room: Room;
+    //private readonly server: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, any>;
+
+    public id: string = ""; //CreateRandomId();
+
+    public y: number = 4;
+    public x: number = 4;
+    public dir: Direction = Direction.DOWN;
+
+    constructor(room: Room) {
+        this.room = room;
+        //this.server.to(this.room.name).emit("playermove", socketId, this.x, this.y, this.dir, run);
+    }
+    unload() {
+        // this.socket.removeAllListeners("moveTo");
+    }
+}
+
+/*
 import { Server, Socket } from "socket.io";
 import { getSystemErrorMap } from "util";
 import { ClientToServerEvents, ServerToClientEvents, InterServerEvents } from ".";
-import { Entity } from "./Entity";
 import { Room } from "./Room";
 import { RoomManager, RoomStructure } from "./RoomManager";
 
-export interface PlayerUpdate {
-    dimmed: boolean;
-}
-
-export class Player extends Entity {
+export class Player {
     // public readonly roomManger: RoomManager;
-    // public readonly room: Room;
+    public readonly room: Room;
     public readonly id: string;
 
     private readonly socket: Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, any>;
@@ -20,29 +40,19 @@ export class Player extends Entity {
     public y: number = 0;
     public x: number = 0;
     public dir: Direction = Direction.DOWN;
-    public invincible: boolean = false;
 
     private moveCooldown: NodeJS.Timeout | null = null;
 
-    private afkTimeout: NodeJS.Timeout | null;
-
     constructor(socketId: string, client: Socket, socket: Server, room: Room) {
-        super(room);
         this.id = socketId;
         this.socket = client;
         this.server = socket;
-        // this.room = room;
+        this.room = room;
         this.x = room.getSpawnX();
         this.y = room.getSpawnY();
 
-        this.afkTimeout = null;
-
-        this.invincible = false;
-        this.updateAfk();
-
         client.on("moveTo", (x: number, y: number, run: boolean) => {
             if (this.moveCooldown === null) {
-                this.updateAfk();
                 if (this.room.canMoveThere(x, y)) {
                     console.log("move " + socketId + " to " + x + ", " + y + " in room " + this.room.name);
                     this.dir = findDirection(this.x, this.y, x, y);
@@ -58,33 +68,8 @@ export class Player extends Entity {
         });
     }
 
-    updateAfk() {
-        this.setAFK(false);
-
-        if (this.afkTimeout != null) clearTimeout(this.afkTimeout);
-
-        this.afkTimeout = setTimeout(() => {
-            this.setAFK(true);
-        }, 5000);
-    }
-
-    public pushUpdate() {
-        this.server.to(this.room.name).emit("playerupdate", this.id, this.getUpdate());
-    }
-
     unload() {
         this.socket.removeAllListeners("moveTo");
-    }
-
-    setAFK(state: boolean) {
-        this.invincible = state;
-        this.pushUpdate();
-    }
-
-    getUpdate(): PlayerUpdate {
-        return {
-            dimmed: this.invincible
-        }
     }
 }
 
@@ -105,3 +90,4 @@ export enum Direction {
     RIGHT,
     LEFT
 }
+*/

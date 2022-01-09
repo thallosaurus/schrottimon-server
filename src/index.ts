@@ -3,7 +3,7 @@ import express from 'express';
 import session from 'express-session';
 import http from 'http';
 import { RoomManager } from './RoomManager';
-import { Direction } from './Player';
+import { Direction, PlayerUpdate } from './Player';
 import bodyParser from 'body-parser';
 import { isValidUser } from './Authentication';
 
@@ -15,6 +15,7 @@ export interface ServerToClientEvents {
     loadlevel: (levelId: string) => void;
     playerjoin: (socketid: string, x: number, y: number) => void;
     playermove: (socketid: string, x: number, y: number, direction: Direction, running: boolean) => void;
+    playerupdate: (socketid: string, update: PlayerUpdate) => void;
 }
 
 export interface ClientToServerEvents {

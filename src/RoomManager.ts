@@ -6,8 +6,11 @@ import { Player } from "./Player";
 import { Room } from "./Room";
 import express, { Router, Application } from 'express';
 import path from "path";
+import { NPC } from "./NPC";
+import { Entity } from "./Entity";
 
-const DEFAULT_MAP = "real_map2_20x20.tmx";
+const DEFAULT_MAP = "spawn.tmx";
+// const DEFAULT_MAP = "real_map2_20x20.tmx";
 
 export interface RoomStructure {
     users: Array<string>;
@@ -38,14 +41,16 @@ export class RoomManager {
     }
 
     static createEmptyRoom(name: string): Room {
-        return new Room(name, this.server);
+        let r = new Room(name, this.server);
+        // r.players.push(new Entity(r));
+        return r;
     }
 
     userLeaveRooms(user: Socket) {
         let room = (<any>user).lastroom;
         if (this.roomExists(room)) {
             this.rooms[room].players = this.getRoom(room).players.filter(e => {
-                console.log(e.id, user.id);
+                // console.log(e.id, user.id);
                 if (e.id === user.id) {
                     e.unload();
                     // user.emit("playerleave", user.id);

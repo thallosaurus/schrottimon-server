@@ -4,13 +4,18 @@ import { Player } from "./Player";
 
 import tmx = require("tmx-parser");
 import path = require("path");
-import process = require("process");
+import { Entity } from "./Entity";
+import { NPC } from "./NPC";
+// import process = require("process");
 
 export class Room {
-    players: Array<Player> = [];
+    players: Array<Entity> = [];
     name: string;
     private server: Server;
     private map: any = null;
+
+    private spawnX: number = 0;
+    private spawnY: number = 0;
 
     constructor(n: string, server: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, any>) {
         this.name = n;
@@ -32,7 +37,18 @@ export class Room {
             if (err) throw err;
             //console.log(map);
             this.map = map;
+            let rootMap = this.getRootMap();
+            this.spawnY = rootMap.properties.spawnY ?? 0;
+            this.spawnX = rootMap.properties.spawnX ?? 0;
         });
+    }
+
+    getSpawnX() {
+        return this.spawnX;
+    }
+
+    getSpawnY() {
+        return this.spawnY;
     }
 
     isMapLoaded(): boolean {
